@@ -10,29 +10,38 @@ if (args.Length > 0)
     filePath = args[0];
 }
 
+Config config = Config.Load("./config.json");
+
 if (string.IsNullOrEmpty(filePath))
 {
-    var projectsView = new ProjectsView("./");
-    AnsiConsole.AlternateScreen(() =>
+    if (config.ShowProjects)
     {
-        try
+        var projectsView = new ProjectsView(config.ProjectsPath);
+        AnsiConsole.AlternateScreen(() =>
         {
-            projectsView.Run();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            Console.ReadKey();
-        }
-    });
+            try
+            {
+                projectsView.Run();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Console.ReadKey();
+            }
+        });
 
-    if (projectsView.ExitRequested)
-    {
-        return;
+        if (projectsView.ExitRequested)
+        {
+            return;
+        }
+        else
+        {
+            filePath = projectsView.SelectedProject;
+        }
     }
     else
     {
-        filePath = projectsView.SelectedProject;
+        // Todo: get the last opened project and set filePath to the path of that project 
     }
 }
 
