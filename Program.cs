@@ -10,11 +10,27 @@ if (args.Length > 0)
     filePath = args[0];
 }
 
+const string cachePath = "./cache";
 Config config = Config.Load("./config.json");
+Cache cache = Cache.Load(cachePath);
 
 if (string.IsNullOrEmpty(filePath))
 {
-    if (config.ShowProjects)
+    bool showProjects = config.ShowProjects;
+    if (showProjects == false)
+    {
+        string p = cache.LastProjectPath;
+        if (string.IsNullOrEmpty(p) == false && p.EndsWith(".json") && File.Exists(p))
+        {
+            filePath = p;
+        }
+        else
+        {
+            showProjects = true;
+        }
+    }
+    
+    if (showProjects)
     {
         var projectsView = new ProjectsView(config.ProjectsPath);
         AnsiConsole.AlternateScreen(() =>
@@ -34,14 +50,10 @@ if (string.IsNullOrEmpty(filePath))
         {
             return;
         }
-        else
-        {
-            filePath = projectsView.SelectedProject;
-        }
-    }
-    else
-    {
-        // Todo: get the last opened project and set filePath to the path of that project 
+
+        filePath = projectsView.SelectedProject;
+        cache.LastProjectPath = filePath;
+        cache.Save(cachePath);
     }
 }
 
