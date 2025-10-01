@@ -3,4 +3,4 @@
 bin/
 obj/
 
-tasks.json
+config.json
