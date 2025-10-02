@@ -10,29 +10,50 @@ if (args.Length > 0)
     filePath = args[0];
 }
 
+const string cachePath = "./cache";
+Config config = Config.Load("./config.json");
+Cache cache = Cache.Load(cachePath);
+
 if (string.IsNullOrEmpty(filePath))
 {
-    var projectsView = new ProjectsView("./");
-    AnsiConsole.AlternateScreen(() =>
+    bool showProjects = config.ShowProjects;
+    if (showProjects == false)
     {
-        try
+        string p = cache.LastProjectPath;
+        if (string.IsNullOrEmpty(p) == false && p.EndsWith(".json") && File.Exists(p))
         {
-            projectsView.Run();
+            filePath = p;
         }
-        catch (Exception e)
+        else
         {
-            Console.WriteLine(e);
-            Console.ReadKey();
+            showProjects = true;
         }
-    });
-
-    if (projectsView.ExitRequested)
-    {
-        return;
     }
-    else
+    
+    if (showProjects)
     {
+        var projectsView = new ProjectsView(config.ProjectsPath);
+        AnsiConsole.AlternateScreen(() =>
+        {
+            try
+            {
+                projectsView.Run();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Console.ReadKey();
+            }
+        });
+
+        if (projectsView.ExitRequested)
+        {
+            return;
+        }
+
         filePath = projectsView.SelectedProject;
+        cache.LastProjectPath = filePath;
+        cache.Save(cachePath);
     }
 }
 
