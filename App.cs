@@ -1,4 +1,3 @@
-using Tusky.Models;
 using Tusky.Services;
 using Tusky.Utils;
 using Tusky.Views;
@@ -63,7 +62,7 @@ public class App
                         lastW = Console.WindowWidth;
                         lastH = Console.WindowHeight;
                         Console.Clear();
-                        Render();
+                        Draw();
                     }
 
                     Thread.Sleep(100);
@@ -82,21 +81,16 @@ public class App
 
         while (_state.ShouldQuit == false)
         {
-            Render();
+            Draw();
 
             ConsoleKeyInfo input = Console.ReadKey(true);
-            HandleInput(input);
+            _inputHandler.HandleInput(_state, input);
         }
 
         Console.CursorVisible = true;
     }
-
-    private void HandleInput(ConsoleKeyInfo input)
-    {
-        _inputHandler.HandleInput(_state, input);
-    }
-
-    private void Render()
+    
+    private void Draw()
     {
         Console.SetCursorPosition(0, 0);
         _view.Draw(_state);
