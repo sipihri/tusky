@@ -34,6 +34,7 @@ public class App
 {
     public readonly TaskService TaskService;
     private readonly View _view;
+    private readonly InputHandler _inputHandler;
     private readonly AppState _state;
 
     public App(TaskService taskService)
@@ -41,6 +42,7 @@ public class App
         TaskService = taskService;
         _state = new AppState();
         _view = new MainView(this);
+        _inputHandler = new InputHandler(this);
     }
 
     /// <summary>
@@ -91,109 +93,7 @@ public class App
 
     private void HandleInput(ConsoleKeyInfo input)
     {
-        if (_state.ShowTextInput)
-        {
-            TextInput.TextInputState state = _state.TextInput.HandleInput(input);
-            if (state == TextInput.TextInputState.Committed)
-            {
-                if (string.IsNullOrWhiteSpace(_state.TextInput.Text) == false)
-                {
-                    if (_state.CurrentTextInputActionType == AppState.TextInputActionType.Add)
-                    {
-                        TaskService.AddTask(_state.TextInput.Text);
-
-                        if (_state.SelectedIndex == -1 && TaskService.Count == 1)
-                            _state.SelectedIndex = 0;
-                    }
-                    else
-                    {
-                        if (_state.SelectedIndex >= 0 && _state.SelectedIndex < TaskService.Count)
-                        {
-                            TaskItem selectedTask = TaskService.GetTaskByIndex(_state.SelectedIndex)!;
-                            TaskService.EditTaskDescription(selectedTask.Id, _state.TextInput.Text);
-                        }
-                    }
-                }
-
-                _state.ShowTextInput = false;
-            }
-            else if (state == TextInput.TextInputState.Cancelled)
-            {
-                _state.ShowTextInput = false;
-            }
-        }
-        else
-        {
-            if (input.KeyChar == 'q')
-            {
-                _state.ShouldQuit = true;
-                return;
-            }
-
-            if (input.KeyChar == 'a')
-            {
-                _state.ShowTextInput = true;
-                _state.CurrentTextInputActionType = AppState.TextInputActionType.Add;
-                _state.TextInput.Reset();
-            }
-            else if (input.KeyChar == 'f')
-            {
-                _state.FilterMode = _state.FilterMode switch
-                {
-                    TaskService.FilterMode.None => TaskService.FilterMode.Incomplete,
-                    TaskService.FilterMode.Incomplete => TaskService.FilterMode.Completed,
-                    _ => TaskService.FilterMode.None
-                };
-                TaskService.Filter(_state.FilterMode);
-
-                if (TaskService.Count == 0) _state.SelectedIndex = -1;
-                else if (_state.SelectedIndex >= TaskService.Count) _state.SelectedIndex = TaskService.Count - 1;
-            }
-            else if (input.KeyChar == 's')
-            {
-                _state.SortMode = _state.SortMode switch
-                {
-                    TaskService.SortMode.DescriptionAscending => TaskService.SortMode.DescriptionDescending,
-                    TaskService.SortMode.DescriptionDescending => TaskService.SortMode.StatusAscending,
-                    TaskService.SortMode.StatusAscending => TaskService.SortMode.StatusDescending,
-                    TaskService.SortMode.StatusDescending => TaskService.SortMode.DateAscending,
-                    TaskService.SortMode.DateAscending => TaskService.SortMode.DateDescending,
-                    TaskService.SortMode.DateDescending => TaskService.SortMode.None,
-                    _ => TaskService.SortMode.DescriptionAscending
-                };
-                TaskService.Sort(_state.SortMode);
-            }
-            else if (TaskService.Count > 0 && _state.SelectedIndex >= 0 && _state.SelectedIndex < TaskService.Count)
-            {
-                TaskItem selectedTask = TaskService.GetTaskByIndex(_state.SelectedIndex)!;
-
-                if (input.KeyChar == 'e')
-                {
-                    _state.ShowTextInput = true;
-                    _state.TextInput.Reset(selectedTask.Description);
-                    _state.CurrentTextInputActionType = AppState.TextInputActionType.Edit;
-                }
-                else if (input.Key == ConsoleKey.DownArrow || input.KeyChar == 'j')
-                {
-                    _state.SelectedIndex = Math.Min(_state.SelectedIndex + 1, TaskService.Count - 1);
-                }
-                else if (input.Key == ConsoleKey.UpArrow || input.KeyChar == 'k')
-                {
-                    _state.SelectedIndex = Math.Max(_state.SelectedIndex - 1, 0);
-                }
-                else if (input.KeyChar == 'x')
-                {
-                    TaskService.MarkTaskCompleted(selectedTask.Id, !selectedTask.IsCompleted);
-                }
-                else if (input.KeyChar == 'd')
-                {
-                    TaskService.DeleteTask(selectedTask.Id);
-
-                    if (TaskService.Count == 0) _state.SelectedIndex = -1;
-                    else if (_state.SelectedIndex >= TaskService.Count) _state.SelectedIndex = TaskService.Count - 1;
-                }
-            }
-        }
+        _inputHandler.HandleInput(_state, input);
     }
 
     private void Render()
