@@ -7,7 +7,8 @@ namespace Tusky;
 public class App
 {
     public readonly TaskService TaskService;
-    public readonly TextInput TextInput = new();
+    public readonly TextInput TextInput;
+    
     private readonly View _view;
     private readonly InputHandler _inputHandler;
     private readonly AppState _state;
@@ -15,6 +16,8 @@ public class App
     public App(TaskService taskService)
     {
         TaskService = taskService;
+        TextInput = new TextInput();
+        
         _state = new AppState();
         _view = new MainView(this);
         _inputHandler = new InputHandler(this);
