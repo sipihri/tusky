@@ -140,7 +140,7 @@ public class MainView : View
         _footerRenderables[1] = _emptyTextRenderable;
         if (state.ShowTextInput)
         {
-            string label = state.IsAddingTask ? "Add Task" : "Edit Task";
+            string label = state.TextInputCommitAction == AppState.TextInputActionType.AddNewTask ? "Add Task" : "Edit Task";
             _footerRenderables[1] = new Markup(state.TextInput.Render(label, $"black on {_selectedPrimaryColor}"));
         }
 

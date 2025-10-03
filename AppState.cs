@@ -25,9 +25,4 @@ public class AppState
 
     public int SelectedIndex;
     public bool ShouldQuit;
-    
-    /// <summary>
-    /// Returns true if the text input was committed and the requested action was to add task
-    /// </summary>
-    public bool IsAddingTask => ShowTextInput && TextInputCommitAction == TextInputActionType.AddNewTask;
 }
