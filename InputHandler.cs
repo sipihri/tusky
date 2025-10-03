@@ -22,7 +22,7 @@ public class InputHandler
             {
                 if (string.IsNullOrWhiteSpace(state.TextInput.Text) == false)
                 {
-                    if (state.CurrentTextInputActionType == AppState.TextInputActionType.Add)
+                    if (state.TextInputCommitAction == AppState.TextInputActionType.AddNewTask)
                     {
                         _app.TaskService.AddTask(state.TextInput.Text);
 
@@ -57,7 +57,7 @@ public class InputHandler
             if (input.KeyChar == 'a')
             {
                 state.ShowTextInput = true;
-                state.CurrentTextInputActionType = AppState.TextInputActionType.Add;
+                state.TextInputCommitAction = AppState.TextInputActionType.AddNewTask;
                 state.TextInput.Reset();
             }
             else if (input.KeyChar == 'f')
@@ -95,7 +95,7 @@ public class InputHandler
                 {
                     state.ShowTextInput = true;
                     state.TextInput.Reset(selectedTask.Description);
-                    state.CurrentTextInputActionType = AppState.TextInputActionType.Edit;
+                    state.TextInputCommitAction = AppState.TextInputActionType.EditSelectedTask;
                 }
                 else if (input.Key == ConsoleKey.DownArrow || input.KeyChar == 'j')
                 {
