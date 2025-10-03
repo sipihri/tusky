@@ -141,7 +141,7 @@ public class MainView : View
         if (state.ShowTextInput)
         {
             string label = state.TextInputCommitAction == AppState.TextInputActionType.AddNewTask ? "Add Task" : "Edit Task";
-            _footerRenderables[1] = new Markup(state.TextInput.Render(label, $"black on {_selectedPrimaryColor}"));
+            _footerRenderables[1] = new Markup(App.TextInput.Render(label, $"black on {_selectedPrimaryColor}"));
         }
 
         layout["Footer"].Update(new Rows(_footerRenderables));

@@ -17,14 +17,14 @@ public class InputHandler
     {
         if (state.ShowTextInput)
         {
-            TextInput.TextInputState textInputState = state.TextInput.HandleInput(input);
+            TextInput.TextInputState textInputState = _app.TextInput.HandleInput(input);
             if (textInputState == TextInput.TextInputState.Committed)
             {
-                if (string.IsNullOrWhiteSpace(state.TextInput.Text) == false)
+                if (string.IsNullOrWhiteSpace(_app.TextInput.Text) == false)
                 {
                     if (state.TextInputCommitAction == AppState.TextInputActionType.AddNewTask)
                     {
-                        _app.TaskService.AddTask(state.TextInput.Text);
+                        _app.TaskService.AddTask(_app.TextInput.Text);
 
                         if (state.SelectedIndex == -1 && _app.TaskService.Count == 1)
                             state.SelectedIndex = 0;
@@ -34,7 +34,7 @@ public class InputHandler
                         if (state.SelectedIndex >= 0 && state.SelectedIndex < _app.TaskService.Count)
                         {
                             TaskItem selectedTask = _app.TaskService.GetTaskByIndex(state.SelectedIndex)!;
-                            _app.TaskService.EditTaskDescription(selectedTask.Id, state.TextInput.Text);
+                            _app.TaskService.EditTaskDescription(selectedTask.Id, _app.TextInput.Text);
                         }
                     }
                 }
@@ -58,7 +58,7 @@ public class InputHandler
             {
                 state.ShowTextInput = true;
                 state.TextInputCommitAction = AppState.TextInputActionType.AddNewTask;
-                state.TextInput.Reset();
+                _app.TextInput.Reset();
             }
             else if (input.KeyChar == 'f')
             {
@@ -94,7 +94,7 @@ public class InputHandler
                 if (input.KeyChar == 'e')
                 {
                     state.ShowTextInput = true;
-                    state.TextInput.Reset(selectedTask.Description);
+                    _app.TextInput.Reset(selectedTask.Description);
                     state.TextInputCommitAction = AppState.TextInputActionType.EditSelectedTask;
                 }
                 else if (input.Key == ConsoleKey.DownArrow || input.KeyChar == 'j')

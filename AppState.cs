@@ -12,7 +12,6 @@ public class AppState
     }
     
     public bool ShowTextInput;
-    public readonly TextInput TextInput = new();
     
     /// <summary>
     /// Action that should be performed when <see cref="TextInput"/> is commited 

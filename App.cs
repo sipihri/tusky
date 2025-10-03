@@ -1,4 +1,5 @@
 using Tusky.Services;
+using Tusky.Utils;
 using Tusky.Views;
 
 namespace Tusky;
@@ -6,6 +7,7 @@ namespace Tusky;
 public class App
 {
     public readonly TaskService TaskService;
+    public readonly TextInput TextInput = new();
     private readonly View _view;
     private readonly InputHandler _inputHandler;
     private readonly AppState _state;
