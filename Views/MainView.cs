@@ -78,19 +78,19 @@ public class MainView : View
         }
     }
 
-    public override void Draw()
+    public override void Draw(AppState state)
     {
         const int headerSize = 2;
-        int footerSize = App.ShowTextInput ? 2 : 1;
+        int footerSize = state.ShowTextInput ? 2 : 1;
 
-        string filterIcon = App.FilterMode switch
+        string filterIcon = state.FilterMode switch
         {
             TaskService.FilterMode.Completed => "󰪥",
             TaskService.FilterMode.Incomplete => "󰄰",
             _ => "󰪡"
         };
 
-        string sortIcon = App.SortMode switch
+        string sortIcon = state.SortMode switch
         {
             TaskService.SortMode.DescriptionAscending => "󰖽",
             TaskService.SortMode.StatusAscending => "󱎅",
@@ -124,12 +124,12 @@ public class MainView : View
         else
         {
             int bodySize = Console.BufferHeight - (headerSize + footerSize);
-            (int startIndex, int endIndex) = CalculateViewableTasksRange(bodySize, tasksCount);
+            (int startIndex, int endIndex) = CalculateViewableTasksRange(state, bodySize, tasksCount);
 
             for (int i = startIndex; i < endIndex; i++)
             {
                 TaskItem task = App.TaskService.GetTaskByIndex(i)!;
-                string str = GetRow($"{i + 1}", task, i == App.SelectedIndex);
+                string str = GetRow($"{i + 1}", task, i == state.SelectedIndex);
                 _taskRenderables.Add(new Markup(str));
             }
         }
@@ -138,17 +138,17 @@ public class MainView : View
 
         _footerRenderables[0] = _footerHintRenderable;
         _footerRenderables[1] = _emptyTextRenderable;
-        if (App.ShowTextInput)
+        if (state.ShowTextInput)
         {
-            string label = App.IsAddingTask ? "Add Task" : "Edit Task";
-            _footerRenderables[1] = new Markup(App.TextInput.Render(label, $"black on {_selectedPrimaryColor}"));
+            string label = state.IsAddingTask ? "Add Task" : "Edit Task";
+            _footerRenderables[1] = new Markup(state.TextInput.Render(label, $"black on {_selectedPrimaryColor}"));
         }
 
         layout["Footer"].Update(new Rows(_footerRenderables));
         AnsiConsole.Write(layout);
     }
     
-    private (int startIndex, int endIndex) CalculateViewableTasksRange(int bodySize, int tasksCount)
+    private (int startIndex, int endIndex) CalculateViewableTasksRange(AppState state, int bodySize, int tasksCount)
     {
         int availableDisplayRows = bodySize;
         if (availableDisplayRows <= 0) availableDisplayRows = 1;
@@ -157,7 +157,7 @@ public class MainView : View
         int end = tasksCount;
         if (tasksCount > availableDisplayRows)
         {
-            start = Math.Max(0, App.SelectedIndex - availableDisplayRows / 2);
+            start = Math.Max(0, state.SelectedIndex - availableDisplayRows / 2);
             if (start + availableDisplayRows > tasksCount)
             {
                 start = Math.Max(0, tasksCount - availableDisplayRows);

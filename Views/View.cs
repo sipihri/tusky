@@ -9,5 +9,5 @@ public abstract class View
         App = app;
     }
 
-    public abstract void Draw();
+    public abstract void Draw(AppState state);
 }

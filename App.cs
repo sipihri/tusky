@@ -5,38 +5,43 @@ using Tusky.Views;
 
 namespace Tusky;
 
-public class App
+public class AppState
 {
-    public readonly TaskService TaskService;
-    private readonly View _view;
-
-    private enum TextInputActionType
+    public enum TextInputActionType
     {
         Add,
         Edit
     }
-
+    
     public bool ShowTextInput;
     public readonly TextInput TextInput = new();
-    private TextInputActionType _textInputActionType;
+    public TextInputActionType CurrentTextInputActionType;
 
     public TaskService.FilterMode FilterMode;
 
     public TaskService.SortMode SortMode;
 
     public int SelectedIndex;
-    private bool _shouldQuit;
-
-    public App(TaskService taskService)
-    {
-        TaskService = taskService;
-        _view = new MainView(this);
-    }
+    public bool ShouldQuit;
     
     /// <summary>
     /// Returns true if the text input was committed and the requested action was to add task
     /// </summary>
-    public bool IsAddingTask => ShowTextInput && _textInputActionType == TextInputActionType.Add;
+    public bool IsAddingTask => ShowTextInput && CurrentTextInputActionType == TextInputActionType.Add;
+}
+
+public class App
+{
+    public readonly TaskService TaskService;
+    private readonly View _view;
+    private readonly AppState _state;
+
+    public App(TaskService taskService)
+    {
+        TaskService = taskService;
+        _state = new AppState();
+        _view = new MainView(this);
+    }
 
     /// <summary>
     /// Starts a background thread and checks for console window resize
@@ -49,7 +54,7 @@ public class App
 
         var resizeThread = new Thread(() =>
             {
-                while (_shouldQuit == false)
+                while (_state.ShouldQuit == false)
                 {
                     if (Console.WindowWidth != lastW || Console.WindowHeight != lastH)
                     {
@@ -73,7 +78,7 @@ public class App
 
         CheckWindowResize();
 
-        while (_shouldQuit == false)
+        while (_state.ShouldQuit == false)
         {
             Render();
 
@@ -86,67 +91,67 @@ public class App
 
     private void HandleInput(ConsoleKeyInfo input)
     {
-        if (ShowTextInput)
+        if (_state.ShowTextInput)
         {
-            TextInput.TextInputState state = TextInput.HandleInput(input);
+            TextInput.TextInputState state = _state.TextInput.HandleInput(input);
             if (state == TextInput.TextInputState.Committed)
             {
-                if (string.IsNullOrWhiteSpace(TextInput.Text) == false)
+                if (string.IsNullOrWhiteSpace(_state.TextInput.Text) == false)
                 {
-                    if (_textInputActionType == TextInputActionType.Add)
+                    if (_state.CurrentTextInputActionType == AppState.TextInputActionType.Add)
                     {
-                        TaskService.AddTask(TextInput.Text);
+                        TaskService.AddTask(_state.TextInput.Text);
 
-                        if (SelectedIndex == -1 && TaskService.Count == 1)
-                            SelectedIndex = 0;
+                        if (_state.SelectedIndex == -1 && TaskService.Count == 1)
+                            _state.SelectedIndex = 0;
                     }
                     else
                     {
-                        if (SelectedIndex >= 0 && SelectedIndex < TaskService.Count)
+                        if (_state.SelectedIndex >= 0 && _state.SelectedIndex < TaskService.Count)
                         {
-                            TaskItem selectedTask = TaskService.GetTaskByIndex(SelectedIndex)!;
-                            TaskService.EditTaskDescription(selectedTask.Id, TextInput.Text);
+                            TaskItem selectedTask = TaskService.GetTaskByIndex(_state.SelectedIndex)!;
+                            TaskService.EditTaskDescription(selectedTask.Id, _state.TextInput.Text);
                         }
                     }
                 }
 
-                ShowTextInput = false;
+                _state.ShowTextInput = false;
             }
             else if (state == TextInput.TextInputState.Cancelled)
             {
-                ShowTextInput = false;
+                _state.ShowTextInput = false;
             }
         }
         else
         {
             if (input.KeyChar == 'q')
             {
-                _shouldQuit = true;
+                _state.ShouldQuit = true;
                 return;
             }
 
             if (input.KeyChar == 'a')
             {
-                ShowTextInput = true;
-                _textInputActionType = TextInputActionType.Add;
-                TextInput.Reset();
+                _state.ShowTextInput = true;
+                _state.CurrentTextInputActionType = AppState.TextInputActionType.Add;
+                _state.TextInput.Reset();
             }
             else if (input.KeyChar == 'f')
             {
-                FilterMode = FilterMode switch
+                _state.FilterMode = _state.FilterMode switch
                 {
                     TaskService.FilterMode.None => TaskService.FilterMode.Incomplete,
                     TaskService.FilterMode.Incomplete => TaskService.FilterMode.Completed,
                     _ => TaskService.FilterMode.None
                 };
-                TaskService.Filter(FilterMode);
+                TaskService.Filter(_state.FilterMode);
 
-                if (TaskService.Count == 0) SelectedIndex = -1;
-                else if (SelectedIndex >= TaskService.Count) SelectedIndex = TaskService.Count - 1;
+                if (TaskService.Count == 0) _state.SelectedIndex = -1;
+                else if (_state.SelectedIndex >= TaskService.Count) _state.SelectedIndex = TaskService.Count - 1;
             }
             else if (input.KeyChar == 's')
             {
-                SortMode = SortMode switch
+                _state.SortMode = _state.SortMode switch
                 {
                     TaskService.SortMode.DescriptionAscending => TaskService.SortMode.DescriptionDescending,
                     TaskService.SortMode.DescriptionDescending => TaskService.SortMode.StatusAscending,
@@ -156,25 +161,25 @@ public class App
                     TaskService.SortMode.DateDescending => TaskService.SortMode.None,
                     _ => TaskService.SortMode.DescriptionAscending
                 };
-                TaskService.Sort(SortMode);
+                TaskService.Sort(_state.SortMode);
             }
-            else if (TaskService.Count > 0 && SelectedIndex >= 0 && SelectedIndex < TaskService.Count)
+            else if (TaskService.Count > 0 && _state.SelectedIndex >= 0 && _state.SelectedIndex < TaskService.Count)
             {
-                TaskItem selectedTask = TaskService.GetTaskByIndex(SelectedIndex)!;
+                TaskItem selectedTask = TaskService.GetTaskByIndex(_state.SelectedIndex)!;
 
                 if (input.KeyChar == 'e')
                 {
-                    ShowTextInput = true;
-                    TextInput.Reset(selectedTask.Description);
-                    _textInputActionType = TextInputActionType.Edit;
+                    _state.ShowTextInput = true;
+                    _state.TextInput.Reset(selectedTask.Description);
+                    _state.CurrentTextInputActionType = AppState.TextInputActionType.Edit;
                 }
                 else if (input.Key == ConsoleKey.DownArrow || input.KeyChar == 'j')
                 {
-                    SelectedIndex = Math.Min(SelectedIndex + 1, TaskService.Count - 1);
+                    _state.SelectedIndex = Math.Min(_state.SelectedIndex + 1, TaskService.Count - 1);
                 }
                 else if (input.Key == ConsoleKey.UpArrow || input.KeyChar == 'k')
                 {
-                    SelectedIndex = Math.Max(SelectedIndex - 1, 0);
+                    _state.SelectedIndex = Math.Max(_state.SelectedIndex - 1, 0);
                 }
                 else if (input.KeyChar == 'x')
                 {
@@ -184,8 +189,8 @@ public class App
                 {
                     TaskService.DeleteTask(selectedTask.Id);
 
-                    if (TaskService.Count == 0) SelectedIndex = -1;
-                    else if (SelectedIndex >= TaskService.Count) SelectedIndex = TaskService.Count - 1;
+                    if (TaskService.Count == 0) _state.SelectedIndex = -1;
+                    else if (_state.SelectedIndex >= TaskService.Count) _state.SelectedIndex = TaskService.Count - 1;
                 }
             }
         }
@@ -194,6 +199,6 @@ public class App
     private void Render()
     {
         Console.SetCursorPosition(0, 0);
-        _view.Draw();
+        _view.Draw(_state);
     }
 }
