@@ -1,7 +1,6 @@
 ﻿using Spectre.Console;
 using Tusky;
-using Tusky.Data;
-using Tusky.Services;
+using Tusky.Views;
 
 var filePath = "";
 
@@ -14,9 +13,11 @@ const string cachePath = "./cache";
 Config config = Config.Load("./config.json");
 Cache cache = Cache.Load(cachePath);
 
+var showProjects = false;
+
 if (string.IsNullOrEmpty(filePath))
 {
-    bool showProjects = config.ShowProjects;
+    showProjects = config.ShowProjects;
     if (showProjects == false)
     {
         string p = cache.LastProjectPath;
@@ -29,37 +30,10 @@ if (string.IsNullOrEmpty(filePath))
             showProjects = true;
         }
     }
-    
-    if (showProjects)
-    {
-        var projectsView = new ProjectsView(config.ProjectsPath);
-        AnsiConsole.AlternateScreen(() =>
-        {
-            try
-            {
-                projectsView.Run();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                Console.ReadKey();
-            }
-        });
-
-        if (projectsView.ExitRequested)
-        {
-            return;
-        }
-
-        filePath = projectsView.SelectedProject;
-        cache.LastProjectPath = filePath;
-        cache.Save(cachePath);
-    }
 }
 
-ITaskRepository repository = new FileSystemTaskRepository(filePath);
-TaskService service = new(repository);
-var app = new App(service);
+ViewType initialView = showProjects ? ViewType.ProjectsView : ViewType.MainView;
+var app = new App(initialView, config, cache, filePath);
 // app.Run();
 AnsiConsole.AlternateScreen(() =>
 {

@@ -1,10 +1,13 @@
 ﻿using Tusky.Services;
 using Tusky.Utils;
+using Tusky.Views;
 
 namespace Tusky;
 
 public class AppState
 {
+    public ViewType CurrentView;
+    
     public enum TextInputActionType
     {
         AddNewTask,

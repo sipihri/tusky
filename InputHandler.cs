@@ -1,6 +1,7 @@
 ﻿using Tusky.Models;
 using Tusky.Services;
 using Tusky.Utils;
+using Tusky.Views;
 
 namespace Tusky;
 
@@ -21,19 +22,23 @@ public class InputHandler
         }
         else
         {
-            bool isTaskSelected = _app.TaskService is { Count: > 0 } && state.SelectedIndex >= 0 &&
+            bool isTaskSelected = state.CurrentView == ViewType.MainView && 
+                                  _app.TaskService.Count > 0 && state.SelectedIndex >= 0 &&
                                   state.SelectedIndex < _app.TaskService.Count;
-            TaskItem? selectedTask = isTaskSelected ? _app.TaskService!.GetTaskByIndex(state.SelectedIndex)! : null;
+            TaskItem? selectedTask = isTaskSelected ? _app.TaskService.GetTaskByIndex(state.SelectedIndex)! : null;
             
             switch (input.KeyChar)
             {
                 case 'q': QuitApp(state); break;
                 case 'a': AddTask(state); break;
-                case 'f' when _app.TaskService != null: SwitchFilterMode(state); break;
-                case 's' when _app.TaskService != null: SwitchSortMode(state); break;
+                case 'f' when state.CurrentView == ViewType.MainView: SwitchFilterMode(state); break;
+                case 's' when state.CurrentView == ViewType.MainView: SwitchSortMode(state); break;
                 case 'e' when isTaskSelected: EditTask(state, selectedTask!); break;
                 case 'x' when isTaskSelected: ToggleCompletion(selectedTask!); break;
                 case 'd' when isTaskSelected: DeleteTask(state, selectedTask!); break;
+                case '\r' when input.Key == ConsoleKey.Enter: 
+                    SwitchToMainView(state);
+                    break;
                 case 'j':
                 case '\0' when input.Key == ConsoleKey.DownArrow:
                     SelectNext(state);
@@ -46,6 +51,11 @@ public class InputHandler
         }
     }
 
+    private static void SwitchToMainView(AppState state)
+    {
+        state.CurrentView = ViewType.MainView;
+    }
+
     private static void SelectPrevious(AppState state)
     {
         state.SelectedIndex = Math.Max(state.SelectedIndex - 1, 0);
@@ -53,18 +63,22 @@ public class InputHandler
 
     private void SelectNext(AppState state)
     {
-        int itemsCount = _app.TaskService?.Count ?? _app.Projects?.Length ?? 0;
+        int itemsCount = state.CurrentView switch
+        {
+            ViewType.MainView => _app.TaskService.Count,
+            _ => _app.Projects.Length
+        };
         state.SelectedIndex = Math.Min(state.SelectedIndex + 1, itemsCount - 1);
     }
 
     private void ToggleCompletion(TaskItem selectedTask)
     {
-        _app.TaskService!.MarkTaskCompleted(selectedTask.Id, !selectedTask.IsCompleted);
+        _app.TaskService.MarkTaskCompleted(selectedTask.Id, !selectedTask.IsCompleted);
     }
 
     private void DeleteTask(AppState state, TaskItem selectedTask)
     {
-        _app.TaskService!.DeleteTask(selectedTask.Id);
+        _app.TaskService.DeleteTask(selectedTask.Id);
 
         if (_app.TaskService.Count == 0) state.SelectedIndex = -1;
         else if (state.SelectedIndex >= _app.TaskService.Count) state.SelectedIndex = _app.TaskService.Count - 1;
@@ -89,7 +103,7 @@ public class InputHandler
             TaskService.SortMode.DateDescending => TaskService.SortMode.None,
             _ => TaskService.SortMode.DescriptionAscending
         };
-        _app.TaskService!.Sort(state.SortMode);
+        _app.TaskService.Sort(state.SortMode);
     }
 
     private void SwitchFilterMode(AppState state)
@@ -100,7 +114,7 @@ public class InputHandler
             TaskService.FilterMode.Incomplete => TaskService.FilterMode.Completed,
             _ => TaskService.FilterMode.None
         };
-        _app.TaskService!.Filter(state.FilterMode);
+        _app.TaskService.Filter(state.FilterMode);
 
         if (_app.TaskService.Count == 0) state.SelectedIndex = -1;
         else if (state.SelectedIndex >= _app.TaskService.Count) state.SelectedIndex = _app.TaskService.Count - 1;
@@ -122,14 +136,14 @@ public class InputHandler
             {
                 if (state.TextInputCommitAction == AppState.TextInputActionType.AddNewTask)
                 {
-                    _app.TaskService!.AddTask(_app.TextInput.Text);
+                    _app.TaskService.AddTask(_app.TextInput.Text);
 
                     if (state.SelectedIndex == -1 && _app.TaskService.Count == 1)
                         state.SelectedIndex = 0;
                 }
                 else
                 {
-                    if (state.SelectedIndex >= 0 && state.SelectedIndex < _app.TaskService!.Count)
+                    if (state.SelectedIndex >= 0 && state.SelectedIndex < _app.TaskService.Count)
                     {
                         TaskItem selectedTask = _app.TaskService.GetTaskByIndex(state.SelectedIndex)!;
                         _app.TaskService.EditTaskDescription(selectedTask.Id, _app.TextInput.Text);
