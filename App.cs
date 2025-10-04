@@ -6,16 +6,18 @@ namespace Tusky;
 
 public class App
 {
-    public readonly TaskService TaskService;
+    public readonly TaskService? TaskService;
+    public readonly string[]? Projects;
     public readonly TextInput TextInput;
     
     private readonly View _view;
     private readonly InputHandler _inputHandler;
     private readonly AppState _state;
 
-    public App(TaskService taskService)
+    public App(TaskService? taskService, string[]? projects)
     {
         TaskService = taskService;
+        Projects = projects;
         TextInput = new TextInput();
         
         _state = new AppState();
